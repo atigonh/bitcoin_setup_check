@@ -354,7 +354,7 @@ def btc_scanner():
 import streamlit as st
 from datetime import timedelta
 
-st.set_page_config(page_title="BTC A+ Live Scanner for น้ายศ", page_icon="₿", layout="wide")
+st.set_page_config(page_title="บิทคอยน้ายศ", page_icon="₿", layout="wide")
 
 INTERVAL_MIN = 1
 DURATION_MIN = 60
@@ -365,7 +365,7 @@ for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":N
     if k not in st.session_state:
         st.session_state[k]=v
 
-st.title("₿ BTC A+ Live Scanner")
+st.title("₿ BTC A+ Live Scanner for น้ายศ")
 st.caption("LONG + SHORT • refresh every 1 minute • stops after 1 hour")
 
 c1,c2=st.columns(2)
