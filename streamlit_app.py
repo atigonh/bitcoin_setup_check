@@ -354,7 +354,7 @@ def btc_scanner():
 import streamlit as st
 from datetime import timedelta
 
-st.set_page_config(page_title="BTC A+ Live Scanner", page_icon="₿", layout="wide")
+st.set_page_config(page_title="BTC A+ Live Scanner for น้ายศ", page_icon="₿", layout="wide")
 
 INTERVAL_MIN = 1
 DURATION_MIN = 60
