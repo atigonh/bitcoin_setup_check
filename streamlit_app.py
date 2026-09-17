@@ -32,7 +32,7 @@ A_SCORE = 68
 B_PLUS_SCORE = 55
 
 RUN_LOOP = True
-LOOP_MINUTES = 10
+LOOP_MINUTES = 1
 MAX_RUNTIME_HOURS = 3
 
 
@@ -356,7 +356,7 @@ from datetime import timedelta
 
 st.set_page_config(page_title="BTC A+ Live Scanner", page_icon="₿", layout="wide")
 
-INTERVAL_MIN = 5
+INTERVAL_MIN = 1
 DURATION_MIN = 60
 MAX_SCANS = DURATION_MIN // INTERVAL_MIN
 PT = ZoneInfo("America/Los_Angeles")
@@ -366,7 +366,7 @@ for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":N
         st.session_state[k]=v
 
 st.title("₿ BTC A+ Live Scanner")
-st.caption("LONG + SHORT • refresh every 5 minutes • stops after 1 hour")
+st.caption("LONG + SHORT • refresh every 1 minute • stops after 1 hour")
 
 c1,c2=st.columns(2)
 if c1.button("▶ START 1-HOUR SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
