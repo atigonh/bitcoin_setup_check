@@ -485,3 +485,31 @@ if st.session_state.history:
 if st.session_state.running:
     time.sleep(1)
     st.rerun()
+
+# ===================== BTC TRADING TIME TABLE =====================
+
+st.divider()
+st.subheader("⏰ ช่วงเวลาการซื้อขาย BTC (เวลาไทย)")
+
+momentum_table = pd.DataFrame({
+    "เวลาไทย": [
+        "20:00–20:30",
+        "20:30–21:30",
+        "21:30–23:00",
+        "23:00–00:00",
+        "เวลาอื่น"
+    ],
+    "ระดับการซื้อขาย": [
+        "🔥 การซื้อขายสูง / ก่อนตลาดสหรัฐเปิด",
+        "🔥🔥🔥 การซื้อขายสูงมาก",
+        "🔥 การซื้อขายสูง",
+        "🟡 การซื้อขายต่ำ–ปานกลาง",
+        "⚪ การซื้อขายต่ำ"
+    ]
+})
+
+st.dataframe(
+    momentum_table,
+    use_container_width=True,
+    hide_index=True
+)
