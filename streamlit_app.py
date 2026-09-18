@@ -518,7 +518,15 @@ if st.session_state.latest is not None:
                 y.metric("Score",int(r["Score"]))
                 x,y=st.columns(2); x.metric("Entry Status",r["Entry_Status"]); y.metric("Entry",f"${r['Entry_Est']:,.2f}")
                 st.metric("VWAP",f"${r['VWAP']:,.2f}")
-                if r["Rating"]=="A+" and r["Entry_Status"]=="READY": st.success(f"A+ {direction} — READY")
+
+                # Always create the same status slot on every rerun.
+                # This prevents an old green READY banner from remaining visible
+                # after the current scan changes to WAIT / NEAR / another rating.
+                ready_banner = st.empty()
+                if r["Rating"] == "A+" and r["Entry_Status"] == "READY":
+                    ready_banner.success(f"A+ {direction} — READY")
+                else:
+                    ready_banner.empty()
 else:
     st.info("Press START to run the first scan.")
 
