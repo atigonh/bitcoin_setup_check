@@ -390,7 +390,7 @@ if st.session_state.running:
                 st.session_state.history.append({
                     "Time_PT":now.strftime("%I:%M:%S %p"), "Direction":r["Direction"],
                     "Rating":r["Rating"], "Score":r["Score"], "Entry_Status":r["Entry_Status"],
-                    "Price":r["Price"], "Entry_Est":r["Entry_Est"], "R2_15m":r["R2_15m"], "VWAP":r["VWAP"]})
+                    "Price":r["Price"], "Entry_Est":r["Entry_Est"], "VWAP":r["VWAP"]})
             st.session_state.next_scan=now+timedelta(minutes=INTERVAL_MIN)
         except Exception as e:
             st.error(f"Scan error: {e}")
@@ -403,6 +403,18 @@ if st.session_state.running:
     a.metric("Status","RUNNING")
     b.metric("Scans",f"{st.session_state.count} / {MAX_SCANS}")
     c.metric("Next scan",f"{sec//60:02d}:{sec%60:02d}")
+
+    # Red countdown bar: full just after a scan, shrinking toward zero.
+    interval_sec = INTERVAL_MIN * 60
+    progress_remaining = min(1.0, max(0.0, sec / interval_sec))
+    st.markdown("""
+        <style>
+        div[data-testid="stProgress"] > div > div > div {
+            background-color: #ff2b2b !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    st.progress(progress_remaining)
 else:
     st.metric("Status","STOPPED")
 
@@ -415,17 +427,15 @@ if st.session_state.latest is not None:
         with col:
             # Bordered card makes LONG and SHORT visually distinct.
             with st.container(border=True):
-                st.subheader(direction)
+                st.markdown(f"<h3 style='text-align:center; margin-top:0;'>{direction}</h3>", unsafe_allow_html=True)
                 x,y=st.columns(2)
                 with x:
                     st.caption("Rating")
                     st.markdown(f"### **{r['Rating']}**")
                 y.metric("Score",int(r["Score"]))
                 x,y=st.columns(2); x.metric("Entry Status",r["Entry_Status"]); y.metric("Entry",f"${r['Entry_Est']:,.2f}")
-                x,y=st.columns(2); x.metric("R² 15m",f"{r['R2_15m']:.3f}"); y.metric("VWAP",f"${r['VWAP']:,.2f}")
+                st.metric("VWAP",f"${r['VWAP']:,.2f}")
                 if r["Rating"]=="A+" and r["Entry_Status"]=="READY": st.success(f"A+ {direction} — READY")
-    with st.expander("Full latest scan"):
-        st.dataframe(df.round(4),use_container_width=True,hide_index=True)
 else:
     st.info("Press START to run the first scan.")
 
