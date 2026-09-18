@@ -377,7 +377,7 @@ def play_a_plus_ready_alert(direction):
         height=0,
     )
 
-for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False}.items():
+for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True}.items():
     if k not in st.session_state:
         st.session_state[k]=v
 
@@ -412,7 +412,8 @@ with thai_col:
         unsafe_allow_html=True,
     )
 
-c1,c2=st.columns(2)
+# Scanner + sound controls
+c1,c2,c3,c4=st.columns([2,1,1,1])
 if c1.button("▶ START 1-HOUR SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
     now=datetime.now(PT)
     st.session_state.running=True; st.session_state.started=now; st.session_state.next_scan=now
@@ -421,9 +422,18 @@ if c1.button("▶ START 1-HOUR SCANNER", type="primary", use_container_width=Tru
 if c2.button("■ STOP", use_container_width=True, disabled=not st.session_state.running):
     st.session_state.running=False; st.rerun()
 
+if c3.button("🔊 TEST SOUND", use_container_width=True, disabled=not st.session_state.sound_enabled):
+    play_a_plus_ready_alert("LONG")
+
+sound_label = "🔊 SOUND ON" if st.session_state.sound_enabled else "🔇 MUTED"
+if c4.button(sound_label, use_container_width=True):
+    st.session_state.sound_enabled = not st.session_state.sound_enabled
+    st.rerun()
+
 # Play a queued alert after the scan-triggered rerun so it reaches the browser.
 if "pending_alert_direction" in st.session_state:
-    play_a_plus_ready_alert(st.session_state.pending_alert_direction)
+    if st.session_state.sound_enabled:
+        play_a_plus_ready_alert(st.session_state.pending_alert_direction)
     del st.session_state.pending_alert_direction
 
 now=datetime.now(PT)
