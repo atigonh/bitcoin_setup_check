@@ -444,11 +444,11 @@ if st.session_state.history:
     history_df = pd.DataFrame(st.session_state.history).iloc[::-1].round(4).reset_index(drop=True)
 
     # Each scan adds one LONG and one SHORT row.
-    # Keep only the latest scan (2 rows) black + bold; fade all older rows gray.
+    # Keep only the latest scan (2 rows) at normal visibility; fade older rows much more.
     def style_history_rows(row):
         if row.name < 2:
-            return ["color: inherit; font-weight: 700"] * len(row)
-        return ["color: #9a9a9a; opacity: 0.55; font-weight: 400"] * len(row)
+            return ["font-weight: 400"] * len(row)
+        return ["color: #b8b8b8; opacity: 0.28; font-weight: 400"] * len(row)
 
     history_styled = history_df.style.apply(style_history_rows, axis=1)
     st.dataframe(history_styled,use_container_width=True,hide_index=True)
