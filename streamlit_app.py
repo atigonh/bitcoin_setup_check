@@ -356,9 +356,9 @@ from datetime import timedelta
 
 st.set_page_config(page_title="บิทคอยน้ายศ", page_icon="₿", layout="wide")
 
-INTERVAL_MIN = 1
-DURATION_MIN = 60
-MAX_SCANS = DURATION_MIN // INTERVAL_MIN
+INTERVAL_SECONDS = 30
+DURATION_MIN = 10
+MAX_SCANS = (DURATION_MIN * 60) // INTERVAL_SECONDS
 PT = ZoneInfo("America/Los_Angeles")
 
 for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[]}.items():
@@ -366,10 +366,10 @@ for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":N
         st.session_state[k]=v
 
 st.title("₿ BTC A+ Live Scanner for น้ายศ")
-st.caption("LONG + SHORT • refresh every 1 minute • stops after 1 hour")
+st.caption("LONG + SHORT • refresh every 30 seconds • stops after 10 minutes")
 
 c1,c2=st.columns(2)
-if c1.button("▶ START 1-HOUR SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
+if c1.button("▶ START 10-MIN SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
     now=datetime.now(PT)
     st.session_state.running=True; st.session_state.started=now; st.session_state.next_scan=now
     st.session_state.count=0; st.session_state.latest=None; st.session_state.history=[]
@@ -391,10 +391,10 @@ if st.session_state.running:
                     "Time_PT":now.strftime("%I:%M:%S %p"), "Direction":r["Direction"],
                     "Rating":r["Rating"], "Score":r["Score"], "Entry_Status":r["Entry_Status"],
                     "Price":r["Price"], "Entry_Est":r["Entry_Est"], "VWAP":r["VWAP"]})
-            st.session_state.next_scan=now+timedelta(minutes=INTERVAL_MIN)
+            st.session_state.next_scan=now+timedelta(seconds=INTERVAL_SECONDS)
         except Exception as e:
             st.error(f"Scan error: {e}")
-            st.session_state.next_scan=now+timedelta(minutes=INTERVAL_MIN)
+            st.session_state.next_scan=now+timedelta(seconds=INTERVAL_SECONDS)
         st.rerun()
 
 if st.session_state.running:
@@ -405,7 +405,7 @@ if st.session_state.running:
     c.metric("Next scan",f"{sec//60:02d}:{sec%60:02d}")
 
     # Red countdown bar: full just after a scan, shrinking toward zero.
-    interval_sec = INTERVAL_MIN * 60
+    interval_sec = INTERVAL_SECONDS
     progress_remaining = min(1.0, max(0.0, sec / interval_sec))
     st.markdown("""
         <style>
