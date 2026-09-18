@@ -357,19 +357,34 @@ from datetime import timedelta
 st.set_page_config(page_title="บิทคอยน้ายศ", page_icon="₿", layout="wide")
 
 INTERVAL_SECONDS = 30
-DURATION_MIN = 10
+DURATION_MIN = 60
 MAX_SCANS = (DURATION_MIN * 60) // INTERVAL_SECONDS
 PT = ZoneInfo("America/Los_Angeles")
 BKK = ZoneInfo("Asia/Bangkok")
 
-for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[]}.items():
+# Browser voice alert. It fires once when an A+ READY setup first appears.
+def play_a_plus_ready_alert(direction):
+    st.components.v1.html(
+        f"""
+        <script>
+        const msg = new SpeechSynthesisUtterance("A plus {direction.lower()} ready");
+        msg.rate = 1.0;
+        msg.pitch = 1.0;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(msg);
+        </script>
+        """,
+        height=0,
+    )
+
+for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False}.items():
     if k not in st.session_state:
         st.session_state[k]=v
 
 title_col, thai_col = st.columns([3, 1])
 with title_col:
     st.title("₿ BTC A+ Live Scanner for น้ายศ")
-    st.caption("LONG + SHORT • refresh every 30 seconds • stops after 10 minutes")
+    st.caption("LONG + SHORT • refresh every 30 seconds • stops after 1 hour")
 
 # Bangkok clock + expected BTC momentum status
 bkk_now = datetime.now(BKK)
@@ -398,13 +413,18 @@ with thai_col:
     )
 
 c1,c2=st.columns(2)
-if c1.button("▶ START 10-MIN SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
+if c1.button("▶ START 1-HOUR SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
     now=datetime.now(PT)
     st.session_state.running=True; st.session_state.started=now; st.session_state.next_scan=now
-    st.session_state.count=0; st.session_state.latest=None; st.session_state.history=[]
+    st.session_state.count=0; st.session_state.latest=None; st.session_state.history=[]; st.session_state.alert_active=False
     st.rerun()
 if c2.button("■ STOP", use_container_width=True, disabled=not st.session_state.running):
     st.session_state.running=False; st.rerun()
+
+# Play a queued alert after the scan-triggered rerun so it reaches the browser.
+if "pending_alert_direction" in st.session_state:
+    play_a_plus_ready_alert(st.session_state.pending_alert_direction)
+    del st.session_state.pending_alert_direction
 
 now=datetime.now(PT)
 if st.session_state.running:
@@ -420,6 +440,15 @@ if st.session_state.running:
                     "Time_PT":now.strftime("%I:%M:%S %p"), "Direction":r["Direction"],
                     "Rating":r["Rating"], "Score":r["Score"], "Entry_Status":r["Entry_Status"],
                     "Price":r["Price"], "Entry_Est":r["Entry_Est"], "VWAP":r["VWAP"]})
+
+            # Alert only on the transition into A+ READY.
+            ready_rows = result[(result["Rating"] == "A+") & (result["Entry_Status"] == "READY")]
+            is_ready_now = not ready_rows.empty
+            if is_ready_now and not st.session_state.alert_active:
+                direction = ready_rows.iloc[0]["Direction"]
+                st.session_state.pending_alert_direction = direction
+            st.session_state.alert_active = is_ready_now
+
             st.session_state.next_scan=now+timedelta(seconds=INTERVAL_SECONDS)
         except Exception as e:
             st.error(f"Scan error: {e}")
@@ -486,30 +515,18 @@ if st.session_state.running:
     time.sleep(1)
     st.rerun()
 
-# ===================== BTC TRADING TIME TABLE =====================
 
+# ===================== BTC TRADING TIME TABLE =====================
 st.divider()
 st.subheader("⏰ ช่วงเวลาการซื้อขาย BTC (เวลาไทย)")
-
 momentum_table = pd.DataFrame({
-    "เวลาไทย": [
-        "20:00–20:30",
-        "20:30–21:30",
-        "21:30–23:00",
-        "23:00–00:00",
-        "เวลาอื่น"
-    ],
+    "เวลาไทย": ["20:00–20:30", "20:30–21:30", "21:30–23:00", "23:00–00:00", "เวลาอื่น"],
     "ระดับการซื้อขาย": [
         "🔥 การซื้อขายสูง / ก่อนตลาดสหรัฐเปิด",
         "🔥🔥🔥 การซื้อขายสูงมาก",
         "🔥 การซื้อขายสูง",
         "🟡 การซื้อขายต่ำ–ปานกลาง",
-        "⚪ การซื้อขายต่ำ"
-    ]
+        "⚪ การซื้อขายต่ำ",
+    ],
 })
-
-st.dataframe(
-    momentum_table,
-    use_container_width=True,
-    hide_index=True
-)
+st.dataframe(momentum_table, use_container_width=True, hide_index=True)
