@@ -377,7 +377,7 @@ def play_a_plus_ready_alert(direction):
         height=0,
     )
 
-for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True}.items():
+for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True,"sound_test_counter":0}.items():
     if k not in st.session_state:
         st.session_state[k]=v
 
@@ -423,7 +423,22 @@ if c2.button("■ STOP", use_container_width=True, disabled=not st.session_state
     st.session_state.running=False; st.rerun()
 
 if c3.button("🔊 TEST SOUND", use_container_width=True, disabled=not st.session_state.sound_enabled):
-    play_a_plus_ready_alert("LONG")
+    st.session_state.sound_test_counter += 1
+    counter = st.session_state.sound_test_counter
+    st.components.v1.html(
+        f"""
+        <script>
+        const testId = {counter};
+        const msg = new SpeechSynthesisUtterance("A plus long ready");
+        msg.rate = 1.0;
+        msg.pitch = 1.0;
+        msg.volume = 1.0;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(msg);
+        </script>
+        """,
+        height=0,
+    )
 
 sound_label = "🔊 SOUND ON" if st.session_state.sound_enabled else "🔇 MUTED"
 if c4.button(sound_label, use_container_width=True):
