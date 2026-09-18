@@ -413,11 +413,17 @@ if st.session_state.latest is not None:
     for col,direction in [(left,"LONG"),(right,"SHORT")]:
         r=df[df["Direction"]==direction].iloc[0]
         with col:
-            st.subheader(direction)
-            x,y=st.columns(2); x.metric("Rating",r["Rating"]); y.metric("Score",int(r["Score"]))
-            x,y=st.columns(2); x.metric("Entry Status",r["Entry_Status"]); y.metric("Entry",f"${r['Entry_Est']:,.2f}")
-            x,y=st.columns(2); x.metric("R² 15m",f"{r['R2_15m']:.3f}"); y.metric("VWAP",f"${r['VWAP']:,.2f}")
-            if r["Rating"]=="A+" and r["Entry_Status"]=="READY": st.success(f"A+ {direction} — READY")
+            # Bordered card makes LONG and SHORT visually distinct.
+            with st.container(border=True):
+                st.subheader(direction)
+                x,y=st.columns(2)
+                with x:
+                    st.caption("Rating")
+                    st.markdown(f"### **{r['Rating']}**")
+                y.metric("Score",int(r["Score"]))
+                x,y=st.columns(2); x.metric("Entry Status",r["Entry_Status"]); y.metric("Entry",f"${r['Entry_Est']:,.2f}")
+                x,y=st.columns(2); x.metric("R² 15m",f"{r['R2_15m']:.3f}"); y.metric("VWAP",f"${r['VWAP']:,.2f}")
+                if r["Rating"]=="A+" and r["Entry_Status"]=="READY": st.success(f"A+ {direction} — READY")
     with st.expander("Full latest scan"):
         st.dataframe(df.round(4),use_container_width=True,hide_index=True)
 else:
@@ -425,7 +431,17 @@ else:
 
 if st.session_state.history:
     st.subheader("Session History")
-    st.dataframe(pd.DataFrame(st.session_state.history).iloc[::-1].round(4),use_container_width=True,hide_index=True)
+    history_df = pd.DataFrame(st.session_state.history).iloc[::-1].round(4).reset_index(drop=True)
+
+    # Each scan adds one LONG and one SHORT row, so the latest two sessions
+    # are the newest four rows. Older sessions are faded gray.
+    def fade_old_sessions(row):
+        if row.name >= 4:
+            return ["color: #9a9a9a; opacity: 0.55"] * len(row)
+        return [""] * len(row)
+
+    history_styled = history_df.style.apply(fade_old_sessions, axis=1)
+    st.dataframe(history_styled,use_container_width=True,hide_index=True)
 
 if st.session_state.running:
     time.sleep(1)
