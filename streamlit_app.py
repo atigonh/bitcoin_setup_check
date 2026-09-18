@@ -443,14 +443,14 @@ if st.session_state.history:
     st.subheader("Session History")
     history_df = pd.DataFrame(st.session_state.history).iloc[::-1].round(4).reset_index(drop=True)
 
-    # Each scan adds one LONG and one SHORT row, so the latest two sessions
-    # are the newest four rows. Older sessions are faded gray.
-    def fade_old_sessions(row):
-        if row.name >= 4:
-            return ["color: #9a9a9a; opacity: 0.55"] * len(row)
-        return [""] * len(row)
+    # Each scan adds one LONG and one SHORT row.
+    # Keep only the latest scan (2 rows) black + bold; fade all older rows gray.
+    def style_history_rows(row):
+        if row.name < 2:
+            return ["color: inherit; font-weight: 700"] * len(row)
+        return ["color: #9a9a9a; opacity: 0.55; font-weight: 400"] * len(row)
 
-    history_styled = history_df.style.apply(fade_old_sessions, axis=1)
+    history_styled = history_df.style.apply(style_history_rows, axis=1)
     st.dataframe(history_styled,use_container_width=True,hide_index=True)
 
 if st.session_state.running:
