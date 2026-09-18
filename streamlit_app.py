@@ -376,15 +376,15 @@ bkk_now = datetime.now(BKK)
 bkk_minutes = bkk_now.hour * 60 + bkk_now.minute
 
 if 20 * 60 <= bkk_minutes < 20 * 60 + 30:
-    momentum_status = "🔥 โมเมนตัมสูง / ก่อนตลาดสหรัฐเปิด"
+    momentum_status = "🔥 การซื้อขายสูง / ก่อนตลาดสหรัฐเปิด"
 elif 20 * 60 + 30 <= bkk_minutes < 21 * 60 + 30:
-    momentum_status = "🔥🔥 ช่วงโมเมนตัมดีที่สุด"
+    momentum_status = "🔥🔥🔥 การซื้อขายสูงมาก"
 elif 21 * 60 + 30 <= bkk_minutes < 23 * 60:
-    momentum_status = "🔥 โมเมนตัมสูง"
+    momentum_status = "🔥 การซื้อขายสูง"
 elif 23 * 60 <= bkk_minutes or bkk_minutes < 1:
-    momentum_status = "🟡 โมเมนตัมต่ำ–ปานกลาง"
+    momentum_status = "🟡 การซื้อขายต่ำ–ปานกลาง"
 else:
-    momentum_status = "⚪ โมเมนตัมต่ำ"
+    momentum_status = "⚪ การซื้อขายต่ำ"
 
 with thai_col:
     st.markdown("<div style='text-align:right;'><b>🇹🇭 เวลาไทย</b></div>", unsafe_allow_html=True)
