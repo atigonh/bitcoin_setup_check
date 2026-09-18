@@ -360,13 +360,42 @@ INTERVAL_SECONDS = 30
 DURATION_MIN = 10
 MAX_SCANS = (DURATION_MIN * 60) // INTERVAL_SECONDS
 PT = ZoneInfo("America/Los_Angeles")
+BKK = ZoneInfo("Asia/Bangkok")
 
 for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[]}.items():
     if k not in st.session_state:
         st.session_state[k]=v
 
-st.title("₿ BTC A+ Live Scanner for น้ายศ")
-st.caption("LONG + SHORT • refresh every 30 seconds • stops after 10 minutes")
+title_col, thai_col = st.columns([3, 1])
+with title_col:
+    st.title("₿ BTC A+ Live Scanner for น้ายศ")
+    st.caption("LONG + SHORT • refresh every 30 seconds • stops after 10 minutes")
+
+# Bangkok clock + expected BTC momentum status
+bkk_now = datetime.now(BKK)
+bkk_minutes = bkk_now.hour * 60 + bkk_now.minute
+
+if 20 * 60 <= bkk_minutes < 20 * 60 + 30:
+    momentum_status = "🔥 โมเมนตัมสูง / ก่อนตลาดสหรัฐเปิด"
+elif 20 * 60 + 30 <= bkk_minutes < 21 * 60 + 30:
+    momentum_status = "🔥🔥 ช่วงโมเมนตัมดีที่สุด"
+elif 21 * 60 + 30 <= bkk_minutes < 23 * 60:
+    momentum_status = "🔥 โมเมนตัมสูง"
+elif 23 * 60 <= bkk_minutes or bkk_minutes < 1:
+    momentum_status = "🟡 โมเมนตัมต่ำ–ปานกลาง"
+else:
+    momentum_status = "⚪ โมเมนตัมต่ำ"
+
+with thai_col:
+    st.markdown("<div style='text-align:right;'><b>🇹🇭 เวลาไทย</b></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='text-align:right; font-size:1.65rem; font-weight:700;'>{bkk_now.strftime('%H:%M:%S')}</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"<div style='text-align:right; font-size:1rem;'>{momentum_status}</div>",
+        unsafe_allow_html=True,
+    )
 
 c1,c2=st.columns(2)
 if c1.button("▶ START 10-MIN SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
