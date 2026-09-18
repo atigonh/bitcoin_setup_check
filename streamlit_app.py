@@ -532,17 +532,86 @@ else:
 
 if st.session_state.history:
     st.subheader("Session History")
-    history_df = pd.DataFrame(st.session_state.history).iloc[::-1].round(4).reset_index(drop=True)
+    history_df = (
+        pd.DataFrame(st.session_state.history)
+        .iloc[::-1]
+        .round(4)
+        .reset_index(drop=True)
+    )
 
-    # Each scan adds one LONG and one SHORT row.
-    # Keep only the latest scan (2 rows) at normal visibility; fade older rows much more.
-    def style_history_rows(row):
-        if row.name < 2:
-            return ["font-weight: 400"] * len(row)
-        return ["color: #b8b8b8; opacity: 0.28; font-weight: 400"] * len(row)
+    # Render Session History exactly once as a static HTML table.
+    # The newest LONG + SHORT rows stay normal; all older rows are strongly faded.
+    import html
 
-    history_styled = history_df.style.apply(style_history_rows, axis=1)
-    st.dataframe(history_styled,use_container_width=True,hide_index=True)
+    def fmt_history_value(value):
+        if pd.isna(value):
+            return ""
+        if isinstance(value, (float, np.floating)):
+            return f"{value:.4f}"
+        return str(value)
+
+    header_html = "".join(
+        f"<th>{html.escape(str(col))}</th>" for col in history_df.columns
+    )
+
+    body_rows = []
+    for idx, row in history_df.iterrows():
+        row_class = "latest-history" if idx < 2 else "old-history"
+        cells = "".join(
+            f"<td>{html.escape(fmt_history_value(value))}</td>"
+            for value in row
+        )
+        body_rows.append(f'<tr class="{row_class}">{cells}</tr>')
+
+    history_html = f"""
+    <style>
+    .session-history-wrap {{
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid rgba(128,128,128,0.28);
+        border-radius: 10px;
+    }}
+    .session-history-table {{
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+    }}
+    .session-history-table th,
+    .session-history-table td {{
+        padding: 10px 9px;
+        text-align: left;
+        border-right: 1px solid rgba(128,128,128,0.20);
+        border-bottom: 1px solid rgba(128,128,128,0.20);
+        white-space: nowrap;
+    }}
+    .session-history-table th {{
+        color: rgba(230,230,230,0.70);
+        background: rgba(128,128,128,0.08);
+        font-weight: 500;
+    }}
+    .session-history-table tr:last-child td {{
+        border-bottom: none;
+    }}
+    .session-history-table th:last-child,
+    .session-history-table td:last-child {{
+        border-right: none;
+    }}
+    .session-history-table .latest-history td {{
+        opacity: 1;
+    }}
+    .session-history-table .old-history td {{
+        opacity: 0.18;
+    }}
+    </style>
+    <div class="session-history-wrap">
+        <table class="session-history-table">
+            <thead><tr>{header_html}</tr></thead>
+            <tbody>{''.join(body_rows)}</tbody>
+        </table>
+    </div>
+    """
+
+    st.markdown(history_html, unsafe_allow_html=True)
 
 if st.session_state.running:
     time.sleep(1)
