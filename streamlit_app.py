@@ -375,7 +375,57 @@ def play_a_plus_ready_alert(direction):
         height=0,
     )
 
-for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True,"sound_test_counter":0,"runtime_hours":1}.items():
+# Browser timeout ring. Plays once when the selected scanner runtime is reached.
+def play_timeout_ring():
+    st.components.v1.html(
+        """
+        <script>
+        (() => {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+
+            const ctx = new AudioCtx();
+            const master = ctx.createGain();
+            master.gain.value = 0.22;
+            master.connect(ctx.destination);
+
+            const now = ctx.currentTime;
+
+            // Three short bell-like rings.
+            [0.00, 0.55, 1.10].forEach((offset) => {
+                [880, 1320].forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = "sine";
+                    osc.frequency.value = freq;
+
+                    const start = now + offset;
+                    gain.gain.setValueAtTime(0.0001, start);
+                    gain.gain.exponentialRampToValueAtTime(
+                        i === 0 ? 0.8 : 0.35,
+                        start + 0.02
+                    );
+                    gain.gain.exponentialRampToValueAtTime(
+                        0.0001,
+                        start + 0.42
+                    );
+
+                    osc.connect(gain);
+                    gain.connect(master);
+                    osc.start(start);
+                    osc.stop(start + 0.45);
+                });
+            });
+
+            setTimeout(() => ctx.close(), 2200);
+        })();
+        </script>
+        """,
+        height=0,
+    )
+
+for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True,"sound_test_counter":0,"runtime_hours":1,"timeout_alert_pending":False}.items():
     if k not in st.session_state:
         st.session_state[k]=v
 
@@ -444,6 +494,7 @@ if c1.button(
     now=datetime.now(PT)
     st.session_state.running=True; st.session_state.started=now; st.session_state.next_scan=now
     st.session_state.count=0; st.session_state.latest=None; st.session_state.history=[]; st.session_state.alert_active=False
+    st.session_state.timeout_alert_pending=False
     st.rerun()
 if c2.button("■ STOP", use_container_width=True, disabled=not st.session_state.running):
     st.session_state.running=False; st.rerun()
@@ -481,6 +532,8 @@ now=datetime.now(PT)
 if st.session_state.running:
     if now-st.session_state.started >= timedelta(minutes=DURATION_MIN) or st.session_state.count >= MAX_SCANS:
         st.session_state.running=False
+        st.session_state.timeout_alert_pending=True
+        st.rerun()
     elif now >= st.session_state.next_scan:
         try:
             result=btc_scanner()
@@ -505,6 +558,13 @@ if st.session_state.running:
             st.error(f"Scan error: {e}")
             st.session_state.next_scan=now+timedelta(seconds=INTERVAL_SECONDS)
         st.rerun()
+
+# Play the timeout ring once after the scanner stops automatically.
+if st.session_state.timeout_alert_pending:
+    if st.session_state.sound_enabled:
+        play_timeout_ring()
+    st.session_state.timeout_alert_pending = False
+    st.success(f"⏰ {selected_runtime_hours}-hour scanner session completed.")
 
 if st.session_state.running:
     sec=max(0,int((st.session_state.next_scan-datetime.now(PT)).total_seconds()))
