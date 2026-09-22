@@ -357,8 +357,6 @@ from datetime import timedelta
 st.set_page_config(page_title="บิทคอยน้ายศ", page_icon="₿", layout="wide")
 
 INTERVAL_SECONDS = 30
-DURATION_MIN = 60
-MAX_SCANS = (DURATION_MIN * 60) // INTERVAL_SECONDS
 PT = ZoneInfo("America/Los_Angeles")
 BKK = ZoneInfo("Asia/Bangkok")
 
@@ -377,14 +375,37 @@ def play_a_plus_ready_alert(direction):
         height=0,
     )
 
-for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True,"sound_test_counter":0}.items():
+for k,v in {"running":False,"started":None,"next_scan":None,"count":0,"latest":None,"history":[],"alert_active":False,"sound_enabled":True,"sound_test_counter":0,"runtime_hours":1}.items():
     if k not in st.session_state:
         st.session_state[k]=v
 
 title_col, thai_col = st.columns([3, 1])
 with title_col:
     st.title("₿ BTC A+ Live Scanner for น้ายศ")
-    st.caption("LONG + SHORT • refresh every 30 seconds • stops after 1 hour")
+
+# Runtime selector: 1–12 hours. Locked while scanner is running.
+runtime_hours = st.slider(
+    "⏱ Scanner runtime (hours)",
+    min_value=1,
+    max_value=12,
+    value=int(st.session_state.runtime_hours),
+    step=1,
+    disabled=st.session_state.running
+)
+
+if not st.session_state.running:
+    st.session_state.runtime_hours = runtime_hours
+
+selected_runtime_hours = int(st.session_state.runtime_hours)
+DURATION_MIN = selected_runtime_hours * 60
+MAX_SCANS = (DURATION_MIN * 60) // INTERVAL_SECONDS
+
+with title_col:
+    st.caption(
+        f"LONG + SHORT • refresh every 30 seconds • "
+        f"stops after {selected_runtime_hours} "
+        f"hour{'s' if selected_runtime_hours != 1 else ''}"
+    )
 
 # Bangkok clock + expected BTC momentum status
 bkk_now = datetime.now(BKK)
@@ -414,7 +435,12 @@ with thai_col:
 
 # Scanner + sound controls
 c1,c2,c3,c4=st.columns([2,1,1,1])
-if c1.button("▶ START 1-HOUR SCANNER", type="primary", use_container_width=True, disabled=st.session_state.running):
+if c1.button(
+    f"▶ START {selected_runtime_hours}-HOUR SCANNER",
+    type="primary",
+    use_container_width=True,
+    disabled=st.session_state.running
+):
     now=datetime.now(PT)
     st.session_state.running=True; st.session_state.started=now; st.session_state.next_scan=now
     st.session_state.count=0; st.session_state.latest=None; st.session_state.history=[]; st.session_state.alert_active=False
